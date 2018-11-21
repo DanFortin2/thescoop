@@ -357,9 +357,36 @@ function updateComment(url, request) {
 
 
 function deleteComment(url, request) {
-  console.log(url);
-  console.log(request);
+  //grab the number at the end of the url and store as the comment id ex. /comments/1 we take the 1
+  const id = Number(url.split('/').filter(segment => segment)[1]);
+  //we then create a variable and store the global comment by its ID
+  const savedComment = database.comments[id];
+  //empty object for the response to pass back
+  const response = {};
+
+  //if savedComment is truthy
+  if (savedComment) {
+    //delete the comment uot of the global database comments object by the ID
+    database.comments[id] = null;
+
+    //created variable to store the comment ID's then splice the comment ID out of the array. Used Index of to specify the exact index
+    //item and then only remove 1 array item
+    const userComments = database.users[savedComment.username].commentIds;
+    userComments.splice(userComments.indexOf(id), 1);
+
+    const articleComments = database.articles[savedComment.articleId].commentIds;
+    articleComments.splice(articleComments.indexOf(id), 1);
+    //return response code no content to show successful deletion
+    response.status = 204;
+    //if saved comment is falsey then return 404 not found
+  } else {
+    response.status = 404;
+  }
+  return response;
 }
+
+
+
 
 function upvoteComment(url, request) {
 
