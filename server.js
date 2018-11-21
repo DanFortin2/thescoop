@@ -294,43 +294,78 @@ function createComment(url, request) {
       body: pendingComment.body,
       //username is set to comment username
       username: pendingComment.username,
-
+      //empty arrays to handle votes and downvotes from another function
       upvotedBy: [],
       downvotedBy: [],
       //article ID is set to the passed in article ID
       articleId: pendingComment.articleId
     };
-
+    //push the comment object into the comments global object. the comment ID starts as the first key and then the
+    //comment is an object within that key ex.
+    /*{ '1':{ id: 1,body: 'Comment Body',username: 'existing_user',upvotedBy: [],downvotedBy: [],articleId: 1 } }*/
     database.comments[comment.id] = comment;
+    //push the comment ID into the commentID's for the username passed in the comments object ex. [1]
     database.users[comment.username].commentIds.push(comment.id);
+    //push the same comment ID as above into the commentID's for the article based off the article ID
+    //passed in the comments object ex. [1]
     database.articles[comment.articleId].commentIds.push(comment.id);
-
+    //push the response.body as the comment object
     response.body = {comment: comment};
+    //also push the response status in the response object for created
     response.status = 201;
-
   }  else {
+    //if does not meet requrements above only push this status into the response object for bad request
     response.status = 400;
   }
+  //return the response crafted above
   return response;
 }
 
 
 
 
-function updateComment() {
-
+function updateComment(url, request) {
+  //grab the number at the end of the url and store as the comment id ex. /comments/1 we take the 1
+  const id = Number(url.split('/').filter(segment => segment)[1]);
+  //we then create a variable and store the global comment by its ID
+  const savedComment = database.comments[id];
+  //create a new variable with the pending comment from the request parameter passed in ex.
+  //{ body:{ comment:{ id: 1,body: 'Updated Body',username: 'existing_user',articleId: 1 } } }
+  const pendingComment = request.body && request.body.comment;
+  //empty object for the response to pass back
+  const response = {};
+  //if there is no ID or no pending comment then return 400 bad request
+  if (!id || !pendingComment) {
+    response.status = 400;
+    //else if there is an ID and pending comment but not saved comment by that ID
+    //then return 404 file not found
+  } else if (!savedComment) {
+    response.status = 404;
+    //if has valid ID, pending comment and ID matches a saved comment in the global comment variable
+  } else {
+    //then the saved comment body will be the new pending comment body, or if not edited take on the saved
+    //comment body
+    savedComment.body = pendingComment.body || savedComment.body;
+    //return the response body to match the new comment body object with the saved comment variable
+    //which could be the pending or original comment
+    response.body = {comment: savedComment};
+    //return a status of 200 to show the server processed. (OK)
+    response.status = 200;
+  }
+  return response;
 }
 
 
-function deleteComment() {
+function deleteComment(url, request) {
+  console.log(url);
+  console.log(request);
+}
+
+function upvoteComment(url, request) {
 
 }
 
-function upvoteComment() {
-
-}
-
-function downvoteComment() {
+function downvoteComment(url, request) {
 
 }
 
