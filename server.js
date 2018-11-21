@@ -47,33 +47,14 @@ const routes = {
 
 
 function getUser(url, request) {
-  //URL is entered and splits the string at the forward slashes. Forward slashes are removed.
-  //Ex. google.ca/Dan/Pass/ would return
-  //google.ca
-  //Dan
-  //Pass
-  //as seperate pathSegments in the map function. Then returns them to the
-  //variable in an array. Array 1 would be the username in an http request 0 is the hostname
-
   const username = url.split('/').filter(segment => segment)[1];
-
-  //user is the value of username in the users object under database.
-  //the username is created in the function below "getOrCreateUsers" and grabbed as a
-  //value from the URL input
   const user = database.users[username];
   const response = {};
-
-  //user comes from the below function in the response
   if (user) {
-    //Articles || Ids created in the articles functions these are coming From
-    //the create and get articles Functions
     const userArticles = user.articleIds.map(
         articleId => database.articles[articleId]);
-        //have to write these functions out
     const userComments = user.commentIds.map(
         commentId => database.comments[commentId]);
-        //use the info above to create it's own response to pass to the other
-        //Functions
     response.body = {
       user: user,
       userArticles: userArticles,
@@ -276,8 +257,10 @@ function downvote(item, username) {
   return item;
 }
 
+///////////////////////////////////////
+/////////////My Code///////////////////
+///////////////////////////////////////
 
-//function to create comments
 function createComment(url, request) {
   //request coming in like this  { body:{ comment: { body: 'Comment Body', username: 'existing_user', articleId: 1 }}}
   const pendingComment = request.body && request.body.comment;
@@ -368,7 +351,6 @@ function deleteComment(url, request) {
   if (savedComment) {
     //delete the comment uot of the global database comments object by the ID
     database.comments[id] = null;
-
     //created variable to store the comment ID's then splice the comment ID out of the array. Used Index of to specify the exact index
     //item and then only remove 1 array item
     const userComments = database.users[savedComment.username].commentIds;
@@ -386,14 +368,52 @@ function deleteComment(url, request) {
 }
 
 
-
-
 function upvoteComment(url, request) {
+  //grab the number at the end of the url and store as the comment id ex. /comments/1 we take the 1
+  const id = Number(url.split('/').filter(segment => segment)[1]);
+  //create username variable based off the username in the request parameter body
+  const username = request.body && request.body.username;
+  //create savedComment based off the comment object in the global database object based off the ID in the url
+  let savedComment = database.comments[id];
+  const response = {};
 
+  //if savedComment is truthy and database user exists
+  if(savedComment && database.users[username]) {
+    //then take savedComment and run it through the upvote function above.
+    savedComment = upvote(savedComment, username);
+    //pass in the modified saved Comment value into the response body and the comment key
+    response.body = {comment: savedComment};
+    //return the status code 200 for (OK)
+    response.status = 200;
+    //if savedComment and username does not exist then return 400 bad request
+  } else {
+    response.status = 400
+  }
+  return response;
 }
 
 function downvoteComment(url, request) {
+  //grab the number at the end of the url and store as the comment id ex. /comments/1 we take the 1
+  const id = Number(url.split('/').filter(segment => segment)[1]);
+  //create username variable based off the username in the request parameter body
+  const username = request.body && request.body.username;
+  //create savedComment based off the comment object in the global database object based off the ID in the url
+  let savedComment = database.comments[id];
+  const response = {};
 
+  //if savedComment is truthy and database user exists
+  if(savedComment && database.users[username]) {
+    //then take savedComment and run it through the downvote function above.
+    savedComment = downvote(savedComment, username);
+    //pass in the modified saved Comment value into the response body and the comment key
+    response.body = {comment: savedComment};
+    //return the status code 200 for (OK)
+    response.status = 200;
+  } else {
+    //if savedComment and username does not exist then return 400 bad request
+    response.status = 400
+  }
+  return response;
 }
 
 
