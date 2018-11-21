@@ -29,6 +29,7 @@ const routes = {
   '/articles/:id/downvote': {
     'PUT': downvoteArticle
   },
+  //comments keys
   '/comments': {
     'POST': createComment
   },
@@ -41,19 +42,38 @@ const routes = {
   },
   '/comments/:id/downvote': {
     'PUT': downvoteComment
-  },
+  }
 };
 
+
 function getUser(url, request) {
+  //URL is entered and splits the string at the forward slashes. Forward slashes are removed.
+  //Ex. google.ca/Dan/Pass/ would return
+  //google.ca
+  //Dan
+  //Pass
+  //as seperate pathSegments in the map function. Then returns them to the
+  //variable in an array. Array 1 would be the username in an http request 0 is the hostname
+
   const username = url.split('/').filter(segment => segment)[1];
+
+  //user is the value of username in the users object under database.
+  //the username is created in the function below "getOrCreateUsers" and grabbed as a
+  //value from the URL input
   const user = database.users[username];
   const response = {};
 
+  //user comes from the below function in the response
   if (user) {
+    //Articles || Ids created in the articles functions these are coming From
+    //the create and get articles Functions
     const userArticles = user.articleIds.map(
         articleId => database.articles[articleId]);
+        //have to write these functions out
     const userComments = user.commentIds.map(
         commentId => database.comments[commentId]);
+        //use the info above to create it's own response to pass to the other
+        //Functions
     response.body = {
       user: user,
       userArticles: userArticles,
@@ -92,6 +112,7 @@ function getOrCreateUser(url, request) {
 
   return response;
 }
+
 
 function getArticles(url, request) {
   const response = {};
@@ -255,15 +276,46 @@ function downvote(item, username) {
   return item;
 }
 
-//create comment functions for Routes object
 
-function getComment() {
+//function to create comments
+function createComment(url, request) {
+  //request coming in like this  { body:{ comment: { body: 'Comment Body', username: 'existing_user', articleId: 1 }}}
+  const pendingComment = request.body && request.body.comment;
+  const response = {};
 
+  //if pendingComment is truthy has a body, the username exists and the article ID exists
+  if(pendingComment && pendingComment.body && database.users[pendingComment.username]
+    && database.articles[pendingComment.articleId]) {
+    //create variable name called it comment
+    const comment = {
+      //id is incremented of database ID
+      id: database.nextCommentId++,
+      //the return responses need a body, body key is set to the comment body
+      body: pendingComment.body,
+      //username is set to comment username
+      username: pendingComment.username,
+
+      upvotedBy: [],
+      downvotedBy: [],
+      //article ID is set to the passed in article ID
+      articleId: pendingComment.articleId
+    };
+
+    database.comments[comment.id] = comment;
+    database.users[comment.username].commentIds.push(comment.id);
+    database.articles[comment.articleId].commentIds.push(comment.id);
+
+    response.body = {comment: comment};
+    response.status = 201;
+
+  }  else {
+    response.status = 400;
+  }
+  return response;
 }
 
-function createComment() {
 
-}
+
 
 function updateComment() {
 

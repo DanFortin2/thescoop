@@ -22,6 +22,7 @@
     "webpack": "^3.5.5"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "testdbg" : "mocha --inspect-brk"
   }
 }
